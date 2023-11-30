@@ -3,10 +3,14 @@ from typing import List
 from fastapi.responses import StreamingResponse
 
 from app.utils.json import json_to_model
-from app.utils.index import get_index
+from app.utils.index import get_index, llm
+from app.utils.prompt import get_refine_template, get_text_qa_template
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from llama_index import VectorStoreIndex
 from llama_index.llms.base import MessageRole, ChatMessage
+from llama_index.retrievers import VectorIndexRetriever
+from llama_index.chat_engine import ContextChatEngine
+from llama_index.memory import ChatMemoryBuffer
 from pydantic import BaseModel
 
 chat_router = r = APIRouter()
@@ -49,9 +53,20 @@ async def chat(
         )
         for m in data.messages
     ]
+    # TODO: change this to an user input/selection.
+    index = index['Pham_Minh_Quang_Resume']
 
     # query chat engine
-    chat_engine = index.as_chat_engine()
+    prefix_messages = [ChatMessage(
+        role="system", content="You are a professional job candidate who will answer the recruiter question using the context information. If the question is out of scope, just apologize and refuse to answer.")]
+    retriever = VectorIndexRetriever(index=index, similarity_top_k=3)
+    memory = ChatMemoryBuffer.from_defaults(token_limit=512)
+    chat_engine = ContextChatEngine(
+        retriever=retriever,
+        llm=llm,
+        memory=memory,
+        prefix_messages=prefix_messages
+    )
     response = chat_engine.stream_chat(lastMessage.content, messages)
 
     # stream response
