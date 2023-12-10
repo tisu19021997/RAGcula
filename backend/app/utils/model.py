@@ -10,7 +10,7 @@ def get_llm(model_url=MODEL_URL):
         model_url=model_url,
         max_new_tokens=1024,
         context_window=4096,
-        temperature=0.9,
+        temperature=0.1,
         model_kwargs={"n_gpu_layers": -1},
     )
     return llm
