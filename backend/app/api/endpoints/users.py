@@ -19,10 +19,11 @@ user_router = r = APIRouter()
 
 SECRET_KEY = os.environ["APP_AUTH_SECRET_KEY"]
 ALGORITHM = os.environ["APP_AUTH_ALGORITHM"]
-ACCESS_TOKEN_EXPIRE_MINUTES = os.environ["APP_AUTH_ACCESS_TOKEN_EXPIRE_MINUTES"]
+ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.environ["APP_AUTH_ACCESS_TOKEN_EXPIRE_MINUTES"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/token")
 
 
 def verify_password(plain_password, hashed_password):
@@ -33,14 +34,20 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-async def get_user(db, username: str):
-    stmt = select(User).filter_by(email=username).first()
-    user = db.execute(stmt).first().__dict__
-    return schema.UserInDB(**user)
+async def get_user(db: AsyncSession, username: str):
+    stmt = select(User).filter_by(username=username)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+    return schema.UserInDB(
+        username=user.username,
+        email=user.email,
+        disabled=user.disabled,
+        hashed_password=user.hashed_password
+    )
 
 
-def authenticate_user(db, username: str, password: str):
-    user = get_user(db, username)
+async def authenticate_user(db: AsyncSession, username: str, password: str):
+    user = await get_user(db, username)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -84,7 +91,7 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-        current_user: Annotated[schema.RawUser, Depends(get_current_user)]
+        current_user: Annotated[schema.UserInDB, Depends(get_current_user)]
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user.")
@@ -96,6 +103,12 @@ async def create_user(
     user: schema.RawUser,
     db: AsyncSession = Depends(get_db)
 ):
+    """CREATE a new user in database after hasing their password.
+
+    Args:
+        user (schema.RawUser): user informations like username, email and password.
+        db (AsyncSession): the local async session.
+    """
     hashed_password = get_password_hash(user.password)
     # user_dict.update({"hashed_password": hashed_password})
     user = User(
@@ -108,13 +121,28 @@ async def create_user(
     await db.commit()
     await db.refresh(user)
 
+    return user
+
 
 @r.post("/token", response_model=schema.Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: AsyncSession = Depends(get_db)
 ):
-    user = authenticate_user(db, form_data.username, form_data.password)
+    """Given user information from the form data, try to log in. 
+    If success, return the Bearer access token. Else, raise the exception.
+
+    Args:
+        form_data (Annotated[OAuth2PasswordRequestForm, Depends): _description_
+        db (AsyncSession, optional): _description_. Defaults to Depends(get_db).
+
+    Raises:
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
+    user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -128,8 +156,8 @@ async def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@r.get("/me", response_model=schema.RawUser)
+@r.get("/me", response_model=schema.UserInDB)
 async def read_users_me(
-    current_user: Annotated[schema.RawUser, Depends(get_current_active_user)]
+    current_user: Annotated[schema.UserInDB, Depends(get_current_active_user)]
 ):
     return current_user

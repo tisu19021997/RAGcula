@@ -55,7 +55,6 @@ async def chat(
         for m in data.messages
     ]
     # TODO: change this to an user input/selection.
-    print(data.user)
     index = index['Truc_Quynh_Resume']
 
     # query chat engine
@@ -63,8 +62,7 @@ async def chat(
         "You are a professional job candidate who will answer the recruiter question using the context information."
         "If the question is out of scope, kindly apologize and refuse to answer."
     )
-    prefix_messages = [ChatMessage(
-        role="system", content=system_message)]
+    prefix_messages = [ChatMessage(role="system", content=system_message)]
     retriever = VectorIndexRetriever(index=index, similarity_top_k=3)
     memory = ChatMemoryBuffer.from_defaults(token_limit=512)
     chat_engine = ContextChatEngine(

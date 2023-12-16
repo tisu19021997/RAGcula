@@ -1,4 +1,6 @@
 import sqlalchemy
+import os
+from dotenv import find_dotenv, load_dotenv
 from llama_index.vector_stores.types import VectorStore
 from llama_index.vector_stores.postgres import PGVectorStore
 from sqlalchemy.engine import make_url
@@ -11,12 +13,10 @@ from app.db.session import (
     engine as app_engine
 )
 
+load_dotenv(find_dotenv())
 
 singleton_instance = None
 did_run_setup = False
-
-DATABASE_URL = "postgresql+asyncpg://postgres:19021997@localhost:5432/postgres"
-VECTOR_STORE_TABLE_NAME = "pg_vector_store"
 
 
 class CustomPGVectorStore(PGVectorStore):
@@ -25,12 +25,9 @@ class CustomPGVectorStore(PGVectorStore):
     """
 
     def _connect(self) -> None:
-        # self._engine = create_engine(self.connection_string)
-        # self._session = sessionmaker(self._engine)
+        # Use our existing app engine and session so we can use the same connection pool
         self._engine = app_engine
         self._session = AppSessionLocal
-
-        # Use our existing app engine and session so we can use the same connection pool
         self._async_engine = app_async_engine
         self._async_session = AppAsyncSessionLocal
 
@@ -41,8 +38,6 @@ class CustomPGVectorStore(PGVectorStore):
         await self._async_engine.dispose()
 
     def _create_tables_if_not_exists(self) -> None:
-        # with self._session() as session, session.begin():
-        #     self._base.metadata.create_all(session.connection())
         pass
 
     def _create_extension(self) -> None:
@@ -64,7 +59,9 @@ class CustomPGVectorStore(PGVectorStore):
         async with self._async_session() as session:
             async with session.begin():
                 conn = await session.connection()
+                # Create vector tables.
                 await conn.run_sync(self._base.metadata.create_all)
+                # Create all non-vector tables.
                 await conn.run_sync(Base.metadata.create_all)
         did_run_setup = True
 
@@ -73,14 +70,14 @@ async def get_vector_store_singleton(embed_dim=1024) -> VectorStore:
     global singleton_instance
     if singleton_instance is not None:
         return singleton_instance
-    url = make_url(DATABASE_URL)
+    url = make_url(os.environ["POSTGRE_CONNECTION_STRING"])
     singleton_instance = CustomPGVectorStore.from_params(
         url.host,
         url.port or 5432,
         url.database,
         url.username,
         url.password,
-        VECTOR_STORE_TABLE_NAME,
+        os.environ["VECTOR_STORE_TABLE_NAME"],
         embed_dim=embed_dim,
     )
     return singleton_instance
