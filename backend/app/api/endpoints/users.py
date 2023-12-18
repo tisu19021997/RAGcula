@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from typing import Annotated
@@ -15,6 +16,7 @@ from app.models.db import User
 
 load_dotenv(find_dotenv())
 
+logger = logging.getLogger("uvicorn")
 user_router = r = APIRouter()
 
 SECRET_KEY = os.environ["APP_AUTH_SECRET_KEY"]
@@ -24,6 +26,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/token")
+
+credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials.",
+    headers={"WWW-Authenticate": "Bearer"}
+)
 
 
 def verify_password(plain_password, hashed_password):
@@ -66,24 +74,31 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
+def authenticate_token(token: str):
+    """Validate a give access token."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        return False
+    return payload
+
+
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: AsyncSession = Depends(get_db)
 ):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials.",
-        headers={"WWW-Authenticate": "Bearer"}
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_data = schema.TokenData(username=username)
-    except JWTError:
+    # Authenticate the given token.
+    payload = authenticate_token(token)
+    if not payload:
         raise credentials_exception
 
+    # Parse the payload username.
+    username = payload.get("sub")
+    if username is None:
+        raise credentials_exception
+    token_data = schema.TokenData(username=username)
+
+    # Retrieve the user from database.
     user = await get_user(db, username=token_data.username)
     if user is None:
         raise credentials_exception
@@ -91,7 +106,7 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-        current_user: Annotated[schema.UserInDB, Depends(get_current_user)]
+    current_user: Annotated[schema.UserInDB, Depends(get_current_user)]
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user.")

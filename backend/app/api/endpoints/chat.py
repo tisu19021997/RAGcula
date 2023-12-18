@@ -1,10 +1,7 @@
+import logging
+from os import access
 from typing import List
-
 from fastapi.responses import StreamingResponse
-
-from app.utils.json import json_to_model
-from app.utils.index import get_index, llm
-from app.utils.prompt import get_refine_template, get_text_qa_template
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from llama_index import VectorStoreIndex
 from llama_index.llms.base import MessageRole, ChatMessage
@@ -12,6 +9,10 @@ from llama_index.retrievers import VectorIndexRetriever
 from llama_index.chat_engine import ContextChatEngine
 from llama_index.memory import ChatMemoryBuffer
 from pydantic import BaseModel
+
+from app.utils.json import json_to_model
+from app.utils.index import get_index, llm
+from app.api.endpoints.users import authenticate_token
 
 chat_router = r = APIRouter()
 
@@ -23,7 +24,6 @@ class _Message(BaseModel):
 
 class _ChatData(BaseModel):
     messages: List[_Message]
-    user: str
 
 
 @r.post("")
@@ -34,6 +34,29 @@ async def chat(
     data: _ChatData = Depends(json_to_model(_ChatData)),
     index: VectorStoreIndex = Depends(get_index),
 ):
+    logger = logging.getLogger("uvicorn")
+
+    access_token = request.headers["Authorization"]
+    # Only support Bearer token.
+    if access_token.startswith('Bearer'):
+        access_token = access_token.split()[1]
+        logger.info(access_token)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unsupport token type"
+        )
+
+    # Use the authenticator.
+    try:
+        # TODO: use the user to get the corresponding indices/files.
+        user = authenticate_token(access_token).get("sub")
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized user"
+        )
+
     # check preconditions and get last message
     if len(data.messages) == 0:
         raise HTTPException(
@@ -54,7 +77,6 @@ async def chat(
         )
         for m in data.messages
     ]
-    # TODO: change this to an user input/selection.
     index = index['Truc_Quynh_Resume']
 
     # query chat engine
