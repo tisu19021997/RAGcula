@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query'
 import { createUser } from '@/app/utils/api';
-import { IUserLogin } from '@/app/interfaces/iuser.interface';
-import { useRouter } from 'next/router'
+import { IUserSignin } from '@/app/interfaces/iuser.interface';
 
 const Form = () => {
     const [username, setUsername] = useState<string>('');
@@ -12,14 +11,12 @@ const Form = () => {
     const [password, setPassword] = useState<string>('');
 
     const mutation = useMutation({
-        mutationFn: (user: IUserLogin) => createUser(user),
+        mutationFn: (user: IUserSignin) => createUser(user),
     });
 
     const onSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         mutation.mutate({ username, email, password });
-        // setUsername(mutation.data.username);
-        // setEmail(mutation.data.email);
     };
 
     return (
@@ -108,6 +105,14 @@ const Form = () => {
                             </button>
                         </div>
                     </form>
+
+                    <p className="mt-10 text-center text-sm text-gray-500">
+                        Already a member?{' '}
+                        <a href="/login" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+                            Login
+                        </a>
+                    </p>
+
                 </div>
 
                 <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">

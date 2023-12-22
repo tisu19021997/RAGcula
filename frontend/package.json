@@ -18,6 +18,7 @@
     "class-variance-authority": "^0.7",
     "clsx": "^1.2.1",
     "dotenv": "^16.3.1",
+    "firebase": "^10.7.1",
     "llamaindex": "0.0.37",
     "lucide-react": "^0.291",
     "next": "^14.0.4",
