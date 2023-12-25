@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useState } from 'react';
+import { Props } from '@/app/interfaces/iprops.interface';
 
 type AuthContextType = {
     accessToken: string | null;
@@ -12,7 +13,7 @@ export const AuthContext = createContext<AuthContextType>({
     setAccessToken: () => { },
 });
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider = ({ children }: Props) => {
     const [accessToken, setAccessToken] = useState<string | null>(null);
 
     return (

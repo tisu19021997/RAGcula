@@ -3,6 +3,8 @@
 import { Fragment } from 'react'
 import { Disclosure, Menu, Transition } from '@headlessui/react'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { useAuth } from '@/app/auth/provider';
+import Avatar from '@/app/components/ui/avatar';
 
 const navigation = [
     { name: 'Dashboard', href: '#', current: true },
@@ -15,7 +17,9 @@ function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
 }
 
-export default function NavBar() {
+const NavBar = () => {
+    const { user, logOut } = useAuth();
+
     return (
         <Disclosure as="nav" className="bg-gray-800">
             {({ open }) => (
@@ -72,17 +76,18 @@ export default function NavBar() {
 
                                 {/* Profile dropdown */}
                                 <Menu as="div" className="relative ml-3">
-                                    <div>
-                                        <Menu.Button className="relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
-                                            <span className="absolute -inset-1.5" />
-                                            <span className="sr-only">Open user menu</span>
-                                            <img
-                                                className="h-8 w-8 rounded-full"
-                                                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                                                alt=""
-                                            />
+                                    <Fragment>
+                                        <Menu.Button>
+                                            {
+                                                user.email
+                                                    ? <span className="text-gray-300 text-md pr-2">
+                                                        👋 {user.email.split("@")[0]}
+                                                    </span>
+                                                    : null
+                                            }
                                         </Menu.Button>
-                                    </div>
+
+                                    </Fragment>
                                     <Transition
                                         as={Fragment}
                                         enter="transition ease-out duration-100"
@@ -97,17 +102,7 @@ export default function NavBar() {
                                                 {({ active }) => (
                                                     <a
                                                         href="#"
-                                                        className={classNames(active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700')}
-                                                    >
-                                                        Your Profile
-                                                    </a>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <a
-                                                        href="#"
-                                                        className={classNames(active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700')}
+                                                        className={classNames(active ? 'bg-gray-100' : '', 'w-full text-left block px-4 py-2 text-sm text-gray-700')}
                                                     >
                                                         Settings
                                                     </a>
@@ -115,12 +110,13 @@ export default function NavBar() {
                                             </Menu.Item>
                                             <Menu.Item>
                                                 {({ active }) => (
-                                                    <a
-                                                        href="#"
-                                                        className={classNames(active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700')}
+                                                    <button
+                                                        onClick={logOut}
+                                                        className={classNames(active ? 'bg-gray-100' : '', 'w-full text-left block px-4 py-2 text-sm text-gray-700')}
+
                                                     >
                                                         Sign out
-                                                    </a>
+                                                    </button>
                                                 )}
                                             </Menu.Item>
                                         </Menu.Items>
@@ -153,3 +149,5 @@ export default function NavBar() {
         </Disclosure>
     )
 }
+
+export default NavBar;

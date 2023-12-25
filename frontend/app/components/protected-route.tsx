@@ -1,20 +1,27 @@
 "use client"
 
-import { useAuth } from "@/app/auth/provider";
 import { useRouter, usePathname } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "@/app/auth/provider";
+import { Props } from "@/app/interfaces/iprops.interface";
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute = ({ children }: Props) => {
+    const { user } = useAuth();
+    const [loading, setLoading] = useState<Boolean>(false);
     const router = useRouter();
     const pathname = usePathname();
-    const { user } = useAuth();
 
     useEffect(() => {
+        console.log(user);
         if (!user.uid) {
             router.push('/login');
+        } else {
+            setLoading(false);
         }
-    }, [pathname, user]);
-    return <div>{user ? children : null}</div>;
+    }, [user, pathname]);
+
+    // TODO: Implement loading state.
+    return loading ? <div></div> : <>{children}</>;
 };
 
 export default ProtectedRoute;

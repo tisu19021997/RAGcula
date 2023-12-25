@@ -2,13 +2,13 @@
 
 import NextLink from "next/link";
 import { useState } from "react";
-import { IUserWithEmailAndPassword } from "@/app/interfaces/iuser.interface";
 import { useRouter } from "next/navigation";
+import { IUser } from "@/app/interfaces/iuser.interface";
 import { useAuth } from "@/app//auth/provider";
 
 
 export default function SignUpForm() {
-    const [data, setData] = useState<IUserWithEmailAndPassword>({
+    const [data, setData] = useState<IUser>({
         email: "",
         password: ""
     });
@@ -18,7 +18,7 @@ export default function SignUpForm() {
     const handleSignUp = async (e: any) => {
         e.preventDefault();
         try {
-            await signUp(data.email, data.password);
+            await signUp(data.email!, data.password);
             router.push('/login');
         } catch (error: any) {
             // TOOD: handle this error.
@@ -49,13 +49,13 @@ export default function SignUpForm() {
                     >
 
                         <div>
-                            <label htmlFor="username" className="block text-sm font-medium leading-6 text-gray-900">
-                                Username
+                            <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
+                                Email
                             </label>
                             <div className="mt-2">
                                 <input
-                                    id="username"
-                                    name="username"
+                                    id="email"
+                                    name="email"
                                     type="text"
                                     required
                                     onChange={(e: any) => {

@@ -9,35 +9,32 @@ import {
     signOut,
 } from 'firebase/auth'
 import { auth } from '@/app/auth/firebase';
-
-interface UserType {
-    email: string | null;
-    uid: string | null;
-}
+import { Props } from '@/app/interfaces/iprops.interface';
+import { IUser } from '@/app/interfaces/iuser.interface';
 
 type AuthContextType = {
-    user: UserType;
-    signUp: (email: string, password: string) => Promise<UserCredential>,
-    logIn: (email: string, password: string) => Promise<UserCredential>,
-    logOut: () => Promise<void>,
-
+    user: IUser;
+    loading: Boolean;
+    signUp: (email: string, password: string) => Promise<UserCredential>;
+    logIn: (email: string, password: string) => Promise<UserCredential>;
+    logOut: () => Promise<void>;
 }
 
 // Create auth context. Then make auth context available across the app.
-export const AuthContext = createContext<any>({
-    user: { email: null, uid: null },
-    signUp: async () => { },
-    logIn: async () => { },
-    logOut: async () => { },
-
+export const AuthContext = createContext<AuthContextType>({
+    user: {
+        email: null,
+        uid: null,
+    },
+    loading: true,
+    signUp: (email: string, password: string) => createUserWithEmailAndPassword(auth, email, password),
+    logIn: (email: string, password: string) => signInWithEmailAndPassword(auth, email, password),
+    logOut: async () => { }
 });
 export const useAuth = () => useContext(AuthContext);
-
 // Create auth context provider.
-export const AuthContextProvider = ({
-    children
-}: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<UserType>({ email: null, uid: null });
+export const AuthContextProvider = ({ children }: Props) => {
+    const [user, setUser] = useState<IUser>({ email: null, uid: null });
     const [loading, setLoading] = useState<Boolean>(true);
 
     useEffect(() => {
@@ -48,7 +45,10 @@ export const AuthContextProvider = ({
                     uid: user.uid
                 });
             } else {
-                setUser({ email: null, uid: null });
+                setUser({
+                    email: null,
+                    uid: null
+                });
             }
         });
         setLoading(false);
@@ -69,7 +69,7 @@ export const AuthContextProvider = ({
     };
 
     return (
-        <AuthContext.Provider value={{ user, signUp, logIn, logOut }}>
+        <AuthContext.Provider value={{ user, loading, signUp, logIn, logOut }}>
             {loading ? null : children}
         </AuthContext.Provider>
     )

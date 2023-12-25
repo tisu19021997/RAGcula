@@ -1,25 +1,25 @@
 "use client";
 
 import NextLink from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/app/auth/provider";
-import { IUserWithEmailAndPassword } from "@/app/interfaces/iuser.interface";
+import { IUser } from "@/app/interfaces/iuser.interface";
+import InlineError from "@/app/components/ui/inline-error";
 
 const LoginForm = () => {
-    const [data, setData] = useState<IUserWithEmailAndPassword>({
+    const [data, setData] = useState<IUser>({
         email: "",
         password: ""
     });
+    const [errorMsg, setErrorMsg] = useState<string | null>("")
     const { user, logIn } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        console.log('Logged in as', user.email);
         // If already logged in, go home bitch.
         if (user.uid) {
             router.push('/');
-            return
         }
     }, [user])
 
@@ -27,11 +27,10 @@ const LoginForm = () => {
     const handleLogin = async (e: any) => {
         e.preventDefault();
         try {
-            await logIn(data.email, data.password);
+            await logIn(data.email!, data.password!);
             router.push('/');
         } catch (error: any) {
-            // TODO: handle this error.
-            console.log(error.message);
+            setErrorMsg('😪 Invalid credentials. Please double-check and retry.');
         }
     };
 
@@ -59,13 +58,13 @@ const LoginForm = () => {
                     >
 
                         <div>
-                            <label htmlFor="username" className="block text-sm font-medium leading-6 text-gray-900">
-                                Username
+                            <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
+                                Email
                             </label>
                             <div className="mt-2">
                                 <input
-                                    id="username"
-                                    name="username"
+                                    id="email"
+                                    name="email"
                                     type="text"
                                     required
                                     onChange={(e: any) => {
@@ -100,6 +99,7 @@ const LoginForm = () => {
                                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                 />
                             </div>
+                            {errorMsg ? <InlineError message={errorMsg} /> : null}
                         </div>
 
                         <div>

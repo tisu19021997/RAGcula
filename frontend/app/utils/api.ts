@@ -1,12 +1,12 @@
 import axios from 'axios'
-import { IUserSignin, IUser } from '@/app/interfaces/iuser.interface'
+import { IUser } from '@/app/interfaces/iuser.interface'
 
 export const axInstance = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API,
     timeout: 1000,
 })
 
-export const createUser = async (userInfo: IUserSignin) => {
+export const createUser = async (userInfo: IUser) => {
     const response = await axInstance.post('/users', userInfo);
     return response.data
 }
