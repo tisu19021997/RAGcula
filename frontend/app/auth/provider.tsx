@@ -8,7 +8,8 @@ import {
     signInWithEmailAndPassword,
     signOut,
 } from 'firebase/auth'
-import { auth } from '@/app/auth/firebase';
+import axInstance from '@/app/api/config';
+import { auth } from '@/app/auth/config';
 import { Props } from '@/app/interfaces/iprops.interface';
 import { IUser } from '@/app/interfaces/iuser.interface';
 
@@ -38,16 +39,30 @@ export const AuthContextProvider = ({ children }: Props) => {
     const [loading, setLoading] = useState<Boolean>(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
+        const unsubscribe = onAuthStateChanged(auth, async (curUser) => {
+            if (curUser) {
+                const token = await curUser.getIdToken();
                 setUser({
-                    email: user.email,
-                    uid: user.uid
+                    email: curUser.email,
+                    uid: curUser.uid,
+                    token: token,
                 });
+                // Include the token in HTTP headers.
+                axInstance.interceptors.request.use(
+                    (config) => {
+                        config.headers['Authorization'] = `Bearer ${token}`;
+                        return config;
+                    },
+                    (error) => {
+                        return Promise.reject(error)
+                    },
+                )
+
             } else {
                 setUser({
                     email: null,
-                    uid: null
+                    uid: null,
+                    token: null,
                 });
             }
         });
@@ -59,8 +74,11 @@ export const AuthContextProvider = ({ children }: Props) => {
         return createUserWithEmailAndPassword(auth, email, password);
     };
 
-    const logIn = (email: string, password: string) => {
-        return signInWithEmailAndPassword(auth, email, password);
+    const logIn = async (email: string, password: string) => {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // const token = await userCredential.user.getIdToken();
+        // console.log(`This is cred ${token}`);
+        return userCredential;
     }
 
     const logOut = async () => {

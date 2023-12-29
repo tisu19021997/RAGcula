@@ -4,10 +4,11 @@ import { useContext } from 'react';
 import { useChat } from "ai/react";
 import { ChatInput, ChatMessages } from "./ui/chat";
 import Dropdown from "./ui/dropdown";
-import { AuthContext } from '@/app/utils/auth';
+import { AuthContext } from '@/app/auth/provider';
+import axInstance from '@/app/api/config';
 
 export default function ChatSection() {
-  const { accessToken } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   const {
     messages,
@@ -20,7 +21,7 @@ export default function ChatSection() {
   } = useChat({
     api: `${process.env.NEXT_PUBLIC_API}/chat`,
     headers: {
-      Authorization: `Bearer ${accessToken}`
+      Authorization: `Bearer ${user.token}`
     },
     body: {
       // user: 'trucquynh123',

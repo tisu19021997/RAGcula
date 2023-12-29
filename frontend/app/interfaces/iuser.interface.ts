@@ -6,4 +6,5 @@ export interface IUser {
     uid?: string | null; // Optional for existing users, required for sign-in.
     email: string | null;
     password?: string | null;
+    token?: string | null;
 }
