@@ -10,16 +10,24 @@ import { PlusIcon, SendHorizonalIcon } from 'lucide-react';
 
 interface FormValues {
     files: {
-        file_: File | null;
+        file_: FileList | null;
         description_: string;
         question_: string;
     }[]
 }
 
 const App = () => {
+    // Maximum number of documents.
     const N_MAX_DOCUMENT = 3;
-
-    const { register, handleSubmit, formState: { errors }, control } = useForm<FormValues>({
+    // Form handling.
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        control,
+        getValues,
+        setValue,
+    } = useForm<FormValues>({
         defaultValues: {
             files: [{ file_: null, description_: '', question_: '' }]
         }
@@ -30,14 +38,30 @@ const App = () => {
     })
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 
+    // Sending files and form fields to server.
     const uploadFiles = handleSubmit(async (data) => {
         try {
+            const formData = new FormData();
+            data.files.forEach(({ file_, description_, question_ }, index) => {
+                if (file_) {
+                    formData.append('files', file_[0])
+                    formData.append('descriptions', description_)
+                    formData.append('questions', question_)
+
+                    // formData.append(`files`, file_[0]);
+                    // formData.append('descriptions', description_);
+                    // formData.append('questions', question_);
+                }
+            });
+
+            // Set loading progress.
             setIsSubmitting(true);
             const response = await axInstance.post(
                 '/chat/upload',
-                data,
+                formData,
                 {
                     headers: {
+                        'Accept': 'application/json',
                         'Content-Type': 'multipart/form-data',
                     }
                 }
