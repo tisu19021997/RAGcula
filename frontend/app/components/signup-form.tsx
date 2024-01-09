@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import NextLink from "next/link";
 import { useState } from "react";
@@ -18,7 +18,7 @@ export default function SignUpForm() {
     const handleSignUp = async (e: any) => {
         e.preventDefault();
         try {
-            await signUp(data.email!, data.password);
+            await signUp(data.email!, data.password!);
             router.push('/login');
         } catch (error: any) {
             // TOOD: handle this error.

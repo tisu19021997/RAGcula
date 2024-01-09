@@ -1,5 +1,10 @@
 {
   "dependencies": {
-    "cookies-next": "^4.1.0"
+    "@chakra-ui/react": "^2.8.2",
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "cookies-next": "^4.1.0",
+    "framer-motion": "^10.16.16",
+    "react-hook-form": "^7.49.2"
   }
 }
