@@ -1,31 +1,45 @@
 import uvicorn
 import os
 import logging
+import llama_index
 from typing import cast
+from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
+from firebase_admin import credentials, initialize_app
 
 from app.db.pg_vector import CustomPGVectorStore, get_vector_store_singleton
 from app.db.wait_for_db import check_database_connection
 from app.api.api import api_router
+from app.setup.service_context import initialize_llamaindex_service_context
 
 load_dotenv()
+
+cwd = Path.cwd()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # first wait for DB to be connectable
+    # First wait for DB to be connectable.
     await check_database_connection()
 
-    # initialize pg vector store singleton
+    # Initialize pg vector store singleton.
     vector_store = await get_vector_store_singleton()
     vector_store = cast(CustomPGVectorStore, vector_store)
     await vector_store.run_setup()
 
+    # Initialize firebase admin for authentication.
+    cred = credentials.Certificate(cwd / 'firebase_creds.json')
+    initialize_app(cred)
+
+    # Set global ServiceContext for LlamaIndex.
+    initialize_llamaindex_service_context()
+
     yield
-    # This section is run on app shutdown
+
+    # This section is run on app shutdown.
     await vector_store.close()
 
 app = FastAPI(lifespan=lifespan)
@@ -33,8 +47,9 @@ app = FastAPI(lifespan=lifespan)
 # Default to 'development' if not set
 environment = os.getenv("ENVIRONMENT", "dev")
 
-
 if environment == "dev":
+    # LLM debug.
+    llama_index.set_global_handler("simple")
     logger = logging.getLogger("uvicorn")
     logger.warning(
         "Running in development mode - allowing CORS for all origins")

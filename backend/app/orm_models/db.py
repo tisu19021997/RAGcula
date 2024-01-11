@@ -1,6 +1,6 @@
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, BOOLEAN
-from app.models.base import Base
+from app.orm_models.base import Base
 
 
 class User(Base):

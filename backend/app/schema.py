@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+# TODO: delete or archive this and the whole manual authentication.
+
 
 class Token(BaseModel):
     access_token: str

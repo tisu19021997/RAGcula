@@ -1,14 +1,8 @@
-from typing import Annotated
-from pathlib import Path
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import Depends, Response, HTTPException, status
-from firebase_admin import credentials, initialize_app, auth
+from fastapi.security import HTTPBearer
+from fastapi import Response, HTTPException, status
+from firebase_admin import auth
 from app.api.deps import AccessTokenDeps
 
-cwd = Path.cwd()
-
-cred = credentials.Certificate(cwd / 'firebase_creds.json')
-initialize_app(cred)
 security = HTTPBearer(auto_error=False)
 
 

@@ -1,11 +1,10 @@
 import sqlalchemy
 import os
 from dotenv import find_dotenv, load_dotenv
-from llama_index.vector_stores.types import VectorStore
 from llama_index.vector_stores.postgres import PGVectorStore
 from sqlalchemy.engine import make_url
 
-from app.models.base import Base
+from app.orm_models.base import Base
 from app.db.session import (
     AsyncSessionLocal as AppAsyncSessionLocal,
     async_engine as app_async_engine,
@@ -66,7 +65,7 @@ class CustomPGVectorStore(PGVectorStore):
         did_run_setup = True
 
 
-async def get_vector_store_singleton(embed_dim=1024) -> VectorStore:
+async def get_vector_store_singleton() -> PGVectorStore:
     global singleton_instance
     if singleton_instance is not None:
         return singleton_instance
@@ -78,6 +77,6 @@ async def get_vector_store_singleton(embed_dim=1024) -> VectorStore:
         url.username,
         url.password,
         os.environ["VECTOR_STORE_TABLE_NAME"],
-        embed_dim=embed_dim,
+        embed_dim=1024,
     )
     return singleton_instance
