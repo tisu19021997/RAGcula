@@ -1,6 +1,7 @@
-import { Button } from "../button";
 import { Input } from "../input";
 import { ChatHandler } from "./chat.interface";
+import { Button } from "antd";
+import { ArrowUpOutlined } from "@ant-design/icons";
 
 export default function ChatInput(
   props: Pick<
@@ -16,14 +17,18 @@ export default function ChatInput(
       <Input
         autoFocus
         name="message"
-        placeholder="Type a message"
+        placeholder="Ask questions related to professional background, skills, education... "
         className="flex-1"
         value={props.input}
         onChange={props.handleInputChange}
       />
-      <Button type="submit" disabled={props.isLoading}>
-        Send message
-      </Button>
+      <Button
+        type='default'
+        htmlType='submit'
+        loading={props.isLoading}
+        icon={<ArrowUpOutlined />}
+        size='large'
+      />
     </form>
   );
 }

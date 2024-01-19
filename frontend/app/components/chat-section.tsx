@@ -2,10 +2,9 @@
 
 import { useContext } from 'react';
 import { useChat } from "ai/react";
+import { Card, Flex, Select } from 'antd';
 import { ChatInput, ChatMessages } from "./ui/chat";
-import Dropdown from "./ui/dropdown";
 import { AuthContext } from '@/app/auth/provider';
-import axInstance from '@/app/api/config';
 
 export default function ChatSection() {
   const { user } = useContext(AuthContext);
@@ -32,14 +31,17 @@ export default function ChatSection() {
   });
 
   return (
-    <div className="space-y-4 max-w-5xl w-full">
-      <Dropdown />
-      <ChatMessages
-        messages={messages}
-        isLoading={isLoading}
-        reload={reload}
-        stop={stop}
-      />
+    <Flex vertical gap={16}>
+      <Card title="Chat">
+        <ChatMessages
+          messages={messages}
+          isLoading={isLoading}
+          reload={reload}
+          stop={stop}
+        />
+
+      </Card>
+
       <ChatInput
         input={input}
         handleSubmit={handleSubmit}
@@ -47,6 +49,6 @@ export default function ChatSection() {
         isLoading={isLoading}
       />
 
-    </div>
+    </Flex>
   );
 }

@@ -1,16 +1,21 @@
 'use client'
 
-import React, { useState } from 'react';
-import { Button, FormControl, VStack, Card, CardBody, CardHeader, CardFooter, HStack, Tag, TagLabel, CloseButton, Input, Heading, Flex, ButtonGroup, Textarea, FormLabel, FormHelperText, Box } from '@chakra-ui/react'
+import React, { useEffect, useState } from 'react';
+import { Button, FormControl, VStack, Card, CardBody, CardHeader, CloseButton, Input, Heading, Flex, ButtonGroup, Textarea, FormLabel, FormHelperText, Highlight } from '@chakra-ui/react'
+import { forwardRef, InputProps } from '@chakra-ui/react'
 import { useFieldArray, useForm } from 'react-hook-form';
-import { IUser } from "@/app/interfaces/iuser.interface";
-import { useAuth } from "@/app//auth/provider";;
-import axInstance from "@/app/api/config";
 import { PlusIcon, SendHorizonalIcon } from 'lucide-react';
+
+import { IDocumentGet } from "@/app/interfaces/idocument.interface";
+import axInstance from "@/app/api/config";
+import { useAuth } from "@/app/auth/provider";
+import ProtectedRoute from '@/app/components/protected-route';
+
 
 interface FormValues {
     files: {
         file_: FileList | null;
+        filename_: string;
         description_: string;
         question_: string;
     }[]
@@ -19,24 +24,60 @@ interface FormValues {
 const App = () => {
     // Maximum number of documents.
     const N_MAX_DOCUMENT = 3;
+    const { user } = useAuth();
+
     // Form handling.
     const {
         register,
         handleSubmit,
         formState: { errors },
         control,
-        getValues,
         setValue,
+        getValues,
     } = useForm<FormValues>({
         defaultValues: {
             files: [{ file_: null, description_: '', question_: '' }]
         }
     });
     const { fields, append, remove } = useFieldArray({
-        name: 'files',
         control,
-    })
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+        name: 'files',
+    });
+
+    // TODO: does 2 states work? edit vs add new documents?
+    const [files, setFiles] = useState<FormValues>({
+        files: [{ file_: null, filename_: '', description_: '', question_: '' }]
+    });
+    useEffect(() => {
+        const getUploaded = async () => {
+            if (user.uid) {
+                const { data } = await axInstance.get(
+                    'chat/upload',
+                    {
+                        params: {
+                            user_id: user.uid
+                        },
+                        timeout: 20000,
+                    },
+                );
+                // Retrieve the uploaded files.
+                data.map((item: IDocumentGet, index: number) => {
+                    console.log(item.s3_path.split('/')[1])
+                    setValue(`files.${index}`, {
+                        file_: null,
+                        filename_: item.s3_path.split('/')[1],
+                        description_: item.description,
+                        question_: item.question,
+                    })
+                });
+
+            }
+        }
+        getUploaded();
+        return () => { }
+
+    }, [user])
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     // Sending files and form fields to server.
     const uploadFiles = handleSubmit(async (data) => {
@@ -60,13 +101,14 @@ const App = () => {
                 '/chat/upload',
                 formData,
                 {
+                    timeout: 20000,
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'multipart/form-data',
                     }
-                }
+                },
             );
-            // console.log(response.data);
+            console.log(response.data);
         } catch (error) {
             // TODO: handle this error too bitch.
             console.error(error);
@@ -76,6 +118,7 @@ const App = () => {
     });
 
     return (
+
         <main className="background-gradient">
             <Flex direction='column' alignItems='center' p='8'>
                 <form onSubmit={uploadFiles}>
@@ -86,7 +129,16 @@ const App = () => {
                                     <Card key={field.id}>
                                         <CardHeader>
                                             <Flex minWidth='max-content' alignItems='center' justifyContent='space-between'>
-                                                <Heading size='lg'>Document #{index}</Heading>
+                                                {/* TODO: Put the uploaded file/filename to the heading or input. */}
+                                                <Input
+                                                    variant={'unstyled'}
+                                                    border={'none'}
+                                                    {...register(
+                                                        `files.${index}.filename_` as const,
+                                                        { required: false, }
+                                                    )}
+                                                    disabled
+                                                />
                                                 <CloseButton
                                                     onClick={() => {
                                                         // There should always be at least 1 file.
@@ -100,9 +152,10 @@ const App = () => {
                                         <CardBody>
                                             <VStack gap='4'>
                                                 <FormControl isRequired>
+                                                    <FormLabel>Upload your documents</FormLabel>
                                                     <Input
                                                         {...register(
-                                                            `files.${index}.file_`,
+                                                            `files.${index}.file_` as const,
                                                             { required: true, }
                                                         )}
                                                         variant='filled'
@@ -115,7 +168,7 @@ const App = () => {
                                                     <FormLabel>Specify when AI could use this document</FormLabel>
                                                     <Textarea
                                                         {...register(
-                                                            `files.${index}.description_`,
+                                                            `files.${index}.description_` as const,
                                                             { required: true, }
                                                         )}
                                                         size='md'
@@ -152,6 +205,7 @@ const App = () => {
                                     if (fields.length === N_MAX_DOCUMENT) return;
                                     append({
                                         file_: null,
+                                        filename_: '',
                                         description_: '',
                                         question_: ''
                                     })
@@ -176,6 +230,7 @@ const App = () => {
                 </form>
             </Flex>
         </main >
+
     )
 }
 

@@ -19,7 +19,7 @@ const LoginForm = () => {
     useEffect(() => {
         // If already logged in, go home bitch.
         if (user.uid) {
-            router.push('/');
+            router.back();
         }
     }, [user])
 
@@ -28,7 +28,8 @@ const LoginForm = () => {
         e.preventDefault();
         try {
             await logIn(data.email!, data.password!);
-            router.push('/');
+            // router.push('/');
+            router.back();
         } catch (error: any) {
             setErrorMsg('😪 Invalid credentials. Please double-check and retry.');
         }

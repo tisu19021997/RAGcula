@@ -5,12 +5,15 @@ import ChatAvatar from "./chat-avatar";
 import { Message } from "./chat.interface";
 import Markdown from "./markdown";
 import { useCopyToClipboard } from "./use-copy-to-clipboard";
+import { useAuth } from "@/app/auth/provider";
 
 export default function ChatMessage(chatMessage: Message) {
   const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 });
+  const { user } = useAuth();
+
   return (
     <div className="flex items-start gap-4 pr-5 pt-5">
-      <ChatAvatar role={chatMessage.role} />
+      <ChatAvatar role={chatMessage.role} name={user.email} />
       <div className="group flex flex-1 justify-between gap-2">
         <div className="flex-1">
           <Markdown content={chatMessage.content} />

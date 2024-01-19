@@ -8,6 +8,7 @@ import {
     signInWithEmailAndPassword,
     signOut,
 } from 'firebase/auth'
+import { useRouter } from 'next/navigation';
 import axInstance from '@/app/api/config';
 import { auth } from '@/app/auth/config';
 import { Props } from '@/app/interfaces/iprops.interface';
@@ -37,6 +38,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthContextProvider = ({ children }: Props) => {
     const [user, setUser] = useState<IUser>({ email: null, uid: null });
     const [loading, setLoading] = useState<Boolean>(true);
+    const router = useRouter();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (curUser) => {
@@ -83,7 +85,8 @@ export const AuthContextProvider = ({ children }: Props) => {
 
     const logOut = async () => {
         setUser({ email: null, uid: null });
-        return await signOut(auth);
+        await signOut(auth);
+        router.push('/login');
     };
 
     return (

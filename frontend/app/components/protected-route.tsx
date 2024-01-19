@@ -12,7 +12,6 @@ const ProtectedRoute = ({ children }: Props) => {
     const pathname = usePathname();
 
     useEffect(() => {
-        console.log(user);
         if (!user.uid) {
             router.push('/login');
         } else {
