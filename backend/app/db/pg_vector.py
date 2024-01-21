@@ -1,16 +1,21 @@
-import sqlalchemy
 import os
+import logging
+import sqlalchemy
 from dotenv import find_dotenv, load_dotenv
 from llama_index.vector_stores.postgres import PGVectorStore
 from sqlalchemy.engine import make_url
+from sqlmodel import SQLModel
 
-from app.orm_models.base import Base
+# from app.orm_models import Base
 from app.db.session import (
     AsyncSessionLocal as AppAsyncSessionLocal,
     async_engine as app_async_engine,
     SessionLocal as AppSessionLocal,
     engine as app_engine
 )
+
+
+logger = logging.getLogger("uvicorn")
 
 load_dotenv(find_dotenv())
 
@@ -61,7 +66,8 @@ class CustomPGVectorStore(PGVectorStore):
                 # Create vector tables.
                 await conn.run_sync(self._base.metadata.create_all)
                 # Create all non-vector tables.
-                await conn.run_sync(Base.metadata.create_all)
+                await conn.run_sync(SQLModel.metadata.create_all)
+
         did_run_setup = True
 
 

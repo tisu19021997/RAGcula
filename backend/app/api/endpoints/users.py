@@ -12,7 +12,7 @@ from passlib.context import CryptContext
 
 from app import schema
 from app.api.deps import get_db
-from app.orm_models.db import User
+from app.orm_models.users import User
 
 load_dotenv(find_dotenv())
 

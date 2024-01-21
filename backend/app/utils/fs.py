@@ -1,11 +1,15 @@
 
 import s3fs
 import boto3
+import os
 
+from dotenv import load_dotenv, find_dotenv
 from fsspec.asyn import AsyncFileSystem
 
-AWS_ACCESS_KEY_ID = "AKIA4K2DFL33MSKWN6V2"
-AWS_SECRET_ACCESS_KEY = "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"
+load_dotenv(find_dotenv())
+
+AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
 
 
 def get_s3_fs() -> AsyncFileSystem:
