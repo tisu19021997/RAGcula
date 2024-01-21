@@ -28,7 +28,6 @@ const DocList: React.FC<DocListProps> = (props) => {
                 params: {
                     user_id: user.uid,
                     document_id: docId,
-                    document_name: name,
                 },
             },
         );

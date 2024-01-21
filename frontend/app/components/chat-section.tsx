@@ -22,16 +22,13 @@ export default function ChatSection() {
     headers: {
       Authorization: `Bearer ${user.token}`
     },
-    body: {
-      // user: 'trucquynh123',
-    },
     onError: (err: Error) => {
       console.log(err);
     }
   });
 
   return (
-    <Flex vertical gap={16}>
+    <Flex vertical justify='space-between' gap={16} style={{ height: '100%' }}>
       <Card title="Chat">
         <ChatMessages
           messages={messages}

@@ -9,6 +9,7 @@ const nextConfig = {
       sharp$: false,
       "onnxruntime-node$": false,
       mongodb$: false,
+      canvas: false,
     };
     return config;
   },

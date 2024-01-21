@@ -1,5 +1,12 @@
 'use client'
 
+import { pdfjs } from 'react-pdf';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.js',
+    import.meta.url,
+).toString();
+
 import React, { useEffect, useState } from 'react';
 import { Layout, Flex, theme, Divider } from 'antd';
 
@@ -9,8 +16,9 @@ import ChatSection from '@/app/components/chat-section';
 import { IDocumentGet } from "@/app/interfaces/idocument.interface";
 import { useAuth } from '@/app/auth/provider';
 import DocList from '@/app/components/doc-list';
-const { Content, Sider } = Layout;
+import ProtectedRoute from '@/app/components/protected-route';
 
+const { Content, Sider } = Layout;
 
 const App = () => {
     const {
@@ -35,7 +43,7 @@ const App = () => {
                     },
                 );
                 // Retrieve the uploaded files.
-                data.map((item: IDocumentGet, index: number) => {
+                data.map((item: IDocumentGet) => {
                     setUploadedFiles((prevState) => [...prevState, item])
                 });
 
@@ -48,9 +56,9 @@ const App = () => {
     return (
 
         <Layout style={{ minHeight: '100vh' }}>
-            <Sider theme='light' width='20%'>
+            <Sider theme='light' width='300px'>
                 <Flex vertical>
-                    <UploadModal />
+                    <UploadModal onUploadSucces={(data) => setUploadedFiles((prevState) => [...prevState, data])} />
                     <Divider />
                     {uploadedFiles.map((doc, index) =>
                         <DocList
