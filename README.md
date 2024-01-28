@@ -1,6 +1,10 @@
 # RAGcula
 A platform with built-in and optimized **local** RAG tools for practical use cases. 
 
+
+https://github.com/tisu19021997/RAgcula/assets/39242900/7ee0690d-75cc-499f-b76e-6833865669c4
+
+
 ## Roadmap
 * [x] Simple chat with uploaded document (not optimized for multiple documents)
 * [ ] Multiple documents
