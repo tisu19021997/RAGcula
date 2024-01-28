@@ -1,18 +1,20 @@
-This is a [LlamaIndex](https://www.llamaindex.ai/) project bootstrapped with [`create-llama`](https://github.com/run-llama/LlamaIndexTS/tree/main/packages/create-llama).
+# RAGcula
+A platform with built-in and optimized **local** RAG tools for practical use cases. 
 
-## Getting Started
+## Roadmap
+* [x] Simple chat with uploaded document (not optimized for multiple documents)
+* [ ] Multiple documents
+* [ ] Better UI/UX
+* [ ] Tool: Resume consult & fast modification
+* [ ] Tool: Chat with (long-ass) scientific papers
+* [ ] ...
 
-First, startup the backend as described in the [backend README](./backend/README.md).
+## Tech stack
+* Backend: `FastAPI`, `llama-index`, `llama-cpp`, `huggingface`
+* Frontend: `NextJS`, `react`
+* Database: `PostgreSQL`, `pgvector` for vector db, `aws-s3` for static files (gonna change to local filesystem)
 
-Second, run the development server of the frontend as described in the [frontend README](./frontend/README.md).
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Learn More
-
-To learn more about LlamaIndex, take a look at the following resources:
-
-- [LlamaIndex Documentation](https://docs.llamaindex.ai) - learn about LlamaIndex (Python features).
-- [LlamaIndexTS Documentation](https://ts.llamaindex.ai) - learn about LlamaIndex (Typescript features).
-
-You can check out [the LlamaIndexTS GitHub repository](https://github.com/run-llama/LlamaIndexTS) - your feedback and contributions are welcome!
+## Run
+* Start frontend `cd frontend && npm run dev`
+* Start backend `cd backend && main.py`
+* Currently, you also need an `aws-s3` account (change to local soon)

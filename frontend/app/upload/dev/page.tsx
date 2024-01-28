@@ -62,6 +62,7 @@ const App = () => {
                     <Divider />
                     {uploadedFiles.map((doc, index) =>
                         <DocList
+                            docUrl={doc.s3_url}
                             key={doc.id}
                             docId={doc.id}
                             onDelete={onDeleteFile}

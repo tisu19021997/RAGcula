@@ -84,5 +84,7 @@ async def get_vector_store_singleton() -> PGVectorStore:
         url.password,
         os.environ["VECTOR_STORE_TABLE_NAME"],
         embed_dim=1024,
+        # hybrid_search=True,
+        # text_search_config="english"
     )
     return singleton_instance

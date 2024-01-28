@@ -14,10 +14,14 @@ from app.db.pg_vector import CustomPGVectorStore, get_vector_store_singleton
 from app.db.wait_for_db import check_database_connection
 from app.api.api import api_router
 from app.setup.service_context import initialize_llamaindex_service_context
+from app.setup.tracing import initialize_tracing_service
 
 load_dotenv()
 
 cwd = Path.cwd()
+
+# Default to 'development' if not set
+environment = os.getenv("ENVIRONMENT", "dev")
 
 
 @asynccontextmanager
@@ -34,8 +38,12 @@ async def lifespan(app: FastAPI):
     cred = credentials.Certificate(cwd / 'firebase_creds.json')
     initialize_app(cred)
 
+    # if environment == "dev":
+    #     # Initialize observability service.
+    #     initialize_tracing_service("wandb", "talking-resume")
+
     # Set global ServiceContext for LlamaIndex.
-    initialize_llamaindex_service_context()
+    initialize_llamaindex_service_context(environment)
 
     yield
 
@@ -44,12 +52,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Default to 'development' if not set
-environment = os.getenv("ENVIRONMENT", "dev")
-
 if environment == "dev":
     # LLM debug.
     llama_index.set_global_handler("simple")
+
     logger = logging.getLogger("uvicorn")
     logger.warning(
         "Running in development mode - allowing CORS for all origins")

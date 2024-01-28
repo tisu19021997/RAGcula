@@ -47,3 +47,6 @@ storage
 .env
 .DS_Store
 firebase_creds.json
+
+# Jupyter notebooks
+notebooks

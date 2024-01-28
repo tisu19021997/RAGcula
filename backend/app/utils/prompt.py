@@ -1,4 +1,9 @@
 from llama_index.prompts import PromptTemplate
+from typing import Sequence
+from llama_index.llms.types import (
+    ChatMessage,
+    MessageRole,
+)
 
 QA_PROMPTS = {
     "neural-chat-7b": (
@@ -41,3 +46,20 @@ def get_text_qa_template(model="neural-chat-7b"):
 def get_refine_template(model="neural-chat-7b"):
     assert model in REFINE_PROMPTS, f'{model} not in {list(REFINE_PROMPTS.keys())}'
     return PromptTemplate(REFINE_PROMPTS[model])
+
+
+def messages_to_prompt_alpaca(messages: Sequence[ChatMessage]) -> str:
+    """Convert messages to a prompt string."""
+    string_messages = []
+    for message in messages:
+        role = message.role
+        content = message.content
+        string_message = f"### {role.value}:\n{content}"
+
+        addtional_kwargs = message.additional_kwargs
+        if addtional_kwargs:
+            string_message += f"\n{addtional_kwargs}"
+        string_messages.append(string_message)
+
+    string_messages.append(f"### {MessageRole.ASSISTANT.value}:\n")
+    return "\n".join(string_messages)

@@ -5,6 +5,8 @@ from fastapi import Depends
 from llama_index import (
     StorageContext,
     load_index_from_storage,
+    VectorStoreIndex,
+    SummaryIndex,
 )
 
 from app.db.pg_vector import get_vector_store_singleton
@@ -18,7 +20,7 @@ logger = logging.getLogger("uvicorn")
 
 async def get_index(
     token_payload: Annotated[dict, Depends(decode_access_token)]
-):
+) -> Annotated[dict, {"summary": SummaryIndex, "vector": VectorStoreIndex}]:
     vector_store = await get_vector_store_singleton()
     user_id = token_payload["user_id"]
     s3 = get_s3_fs()
@@ -30,12 +32,8 @@ async def get_index(
             vector_store=vector_store,
             persist_dir=f"talking-resume/{user_id}",
             fs=s3)
-        index = load_index_from_storage(storage_context, index_id=user_id)
-        return index
-
-# Provides an overview of my professional qualifications, relevant work experience, skills, education and notable accomplishments.
-
-# What is your educational background?
-# What work experience does you have?
-# What skills do you possess?
-# In your previous job, did you receive any notable awards?
+        indices = {}
+        for prefix in ["summary", "vector"]:
+            indices[prefix] = load_index_from_storage(
+                storage_context, index_id=f'{prefix}_{user_id}')
+        return indices

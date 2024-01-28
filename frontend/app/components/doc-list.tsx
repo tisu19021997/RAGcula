@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { PaperClipOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PaperClipOutlined, DeleteOutlined, EyeOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { gray } from '@ant-design/colors';
-import { Typography, Flex, Space, Button, Popconfirm, message, theme } from 'antd';
+import { Typography, Flex, Space, Button, Popconfirm, theme } from 'antd';
+import { red } from "@ant-design/colors";
+
 import axInstance from '@/app/api/config';
 import { useAuth } from '@/app/auth/provider';
+import Link from 'next/link';
 
 const { Text } = Typography;
 
 interface DocListProps {
     name: string;
+    docUrl?: string;
     docId?: string | null;
     docType?: string;
     onDelete: (docId: string) => void
@@ -17,7 +21,7 @@ interface DocListProps {
 
 
 const DocList: React.FC<DocListProps> = (props) => {
-    const { name, docId, onDelete } = props;
+    const { name, docId, docUrl, onDelete } = props;
     const [isHovered, setIsHovered] = useState<boolean>(false);
     const { token: { paddingMD } } = theme.useToken();
     const { user } = useAuth();
@@ -48,23 +52,37 @@ const DocList: React.FC<DocListProps> = (props) => {
         >
             <Space size='small'>
                 <PaperClipOutlined />
-                <Text ellipsis style={{ width: '200px' }}>{name}</Text>
+                <Text ellipsis style={{ width: '180px' }}>{name}</Text>
             </Space>
+
+
+            <Button
+                type='text'
+                icon={<EyeOutlined />}
+                href={docUrl}
+                target='_blank'
+                rel='noopener noreferrer'
+                style={{ color: gray[0] }}
+                hidden={!isHovered}
+            />
+
             <Popconfirm
                 title='Delete file?'
                 description={`This will delete ${name}`}
                 onConfirm={confirmDelete}
                 okText='Delete'
                 cancelText='Cancel'
+                icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
             >
                 <Button
                     danger
-                    icon={<DeleteOutlined />}
+                    type='text'
+                    icon={<DeleteOutlined style={{ color: red[4] }} />}
                     style={{ color: gray[0] }}
                     hidden={!isHovered}
-                // onClick={deleteHandler}
                 />
             </Popconfirm>
+
 
         </Flex>
     )

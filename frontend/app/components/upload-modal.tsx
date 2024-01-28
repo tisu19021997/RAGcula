@@ -52,7 +52,7 @@ const UploadModal: React.FC<UploadModelProps> = ({ onUploadSucces }) => {
                         '/chat/upload/single',
                         formData,
                         {
-                            timeout: 20000,
+                            timeout: 50000,
                             headers: {
                                 'Accept': 'application/json',
                                 'Content-Type': 'multipart/form-data',
@@ -75,6 +75,7 @@ const UploadModal: React.FC<UploadModelProps> = ({ onUploadSucces }) => {
                     duration: 5
 
                 })
+                console.log(info);
             }).finally(() => setIsUploading(false))
     };
 
