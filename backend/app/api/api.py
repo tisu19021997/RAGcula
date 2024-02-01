@@ -1,8 +1,9 @@
 from fastapi import APIRouter
 
-from app.api.endpoints import chat
+from app.upload.router import upload_router
+from app.chat.router import chat_router
 
 api_router = APIRouter()
 
-api_router.include_router(chat.chat_router, prefix="/chat")
-# api_router.include_router(users.user_router, prefix="/users")
+api_router.include_router(chat_router, prefix="/chat")
+api_router.include_router(upload_router, prefix="/upload")

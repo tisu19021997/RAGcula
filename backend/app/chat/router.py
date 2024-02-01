@@ -13,12 +13,12 @@ from llama_index.memory import ChatMemoryBuffer
 from llama_index.vector_stores import MetadataFilter, MetadataFilters, FilterOperator
 from llama_index.callbacks import CallbackManager, LlamaDebugHandler
 
-from app.utils.json_to import json_to_model
-from app.utils.index import get_index
-from app.pydantic_models.chat import ChatData
-from app.prompts.system import LLM_SYSTEM_MESSAGE
-from rag.schemas import RagIndex
 from app.auth import decode_access_token
+from rag.systems.router_system import RouterSystem
+from rag.index import load_indices
+from rag.prompt import LLM_SYSTEM_MESSAGE
+from .utils import json_to_model
+from .schemas import ChatData
 
 chat_router = r = APIRouter()
 
@@ -28,12 +28,15 @@ async def chat(
     request: Request,
     # Note: To support clients sending a JSON object using content-type "text/plain",
     # we need to use Depends(json_to_model(_ChatData)) here
+    token_payload: Annotated[dict, Depends(decode_access_token)],
     data: Annotated[ChatData, Depends(json_to_model(ChatData))],
-    index: Annotated[RagIndex, Depends(get_index)],
-    token_payload: Annotated[dict, Depends(decode_access_token)]
 ):
     # logger = logging.getLogger("uvicorn")
     user_id = token_payload["user_id"]
+    # indices = await load_indices(user_id)
+    rag_system: RouterSystem = request.state.rag_system
+    # indices = rag_system.load_indices()
+
     # Only need to retrieve indices from the current user.
     filters = MetadataFilters(
         filters=[
@@ -65,59 +68,9 @@ async def chat(
         for m in data.messages
     ]
 
-    # query chat engine
-    # system_message = (
-    #     "You are a professional job candidate who will answer the recruiter question using the context information."
-    #     "If the question is out of scope, kindly apologize and refuse to answer."
-    # )
+    rag_system.build_retrievers()
 
-    # Callbacks for observability.
-    # TODO: this is not working.
-    llama_debug = LlamaDebugHandler(print_trace_on_end=True)
-    callback_manager = CallbackManager([llama_debug])
-
-    vs_retriever = VectorIndexRetriever(
-        index=index.vector,
-        similarity_top_k=3,
-        filters=filters,
-    )
-    summary_retriever = SummaryIndexEmbeddingRetriever(
-        index=index.summary,
-        similarity_top_k=3,
-    )
-
-    vs_tool = RetrieverTool.from_defaults(
-        retriever=vs_retriever,
-        description="Useful for retrieving specific context from uploaded documents."
-    )
-    summary_tool = RetrieverTool.from_defaults(
-        retriever=summary_retriever,
-        description="Useful to retrieve all context from uploaded documents and summary tasks. Don't use if the question only requires more specific context."
-    )
-
-    # TODO: correct the prompt used by LLM to use router retriever.
-    empty_retriever = EmptyIndex().as_retriever()
-    empty_tool = RetrieverTool.from_defaults(
-        empty_retriever,
-        description="Useful for questions not related to uploaded documents."
-    )
-
-    retriever = RouterRetriever(
-        selector=LLMSingleSelector.from_defaults(
-            # prompt_template_str=SINGLE_SELECTOR_PROMPT_TEMPLATE
-        ),
-        retriever_tools=[vs_tool, summary_tool, empty_tool]
-    )
-
-    chat_engine = ContextChatEngine(
-        retriever=retriever,
-        llm=llama_index.global_service_context.llm,
-        memory=ChatMemoryBuffer.from_defaults(token_limit=4096),
-        prefix_messages=[ChatMessage(
-            role="system", content=LLM_SYSTEM_MESSAGE)],
-        callback_manager=callback_manager,
-    )
-    response = chat_engine.stream_chat(lastMessage.content, messages)
+    response = rag_system.engine.stream_chat(lastMessage.content, messages)
 
     # stream response
     async def event_generator():

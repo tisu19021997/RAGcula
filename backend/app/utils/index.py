@@ -5,14 +5,13 @@ from fastapi import Depends
 from llama_index import (
     StorageContext,
     load_index_from_storage,
-    VectorStoreIndex,
-    SummaryIndex,
 )
 
 from app.db.pg_vector import get_vector_store_singleton
 from app.utils.fs import get_s3_fs
 from app.utils.auth import decode_access_token
 from app.db.crud import is_user_existed
+from rag.schemas import RagIndex
 
 DATA_DIR = Path("./data")  # directory containing the documents to index
 logger = logging.getLogger("uvicorn")
@@ -20,7 +19,7 @@ logger = logging.getLogger("uvicorn")
 
 async def get_index(
     token_payload: Annotated[dict, Depends(decode_access_token)]
-) -> Annotated[dict, {"summary": SummaryIndex, "vector": VectorStoreIndex}]:
+) -> RagIndex:
     vector_store = await get_vector_store_singleton()
     user_id = token_payload["user_id"]
     s3 = get_s3_fs()
@@ -36,4 +35,4 @@ async def get_index(
         for prefix in ["summary", "vector"]:
             indices[prefix] = load_index_from_storage(
                 storage_context, index_id=f'{prefix}_{user_id}')
-        return indices
+        return RagIndex(**indices)

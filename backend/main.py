@@ -10,11 +10,19 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from firebase_admin import credentials, initialize_app
 
-from app.db.pg_vector import CustomPGVectorStore, get_vector_store_singleton
-from app.db.wait_for_db import check_database_connection
-from app.api.api import api_router
+from llama_index import VectorStoreIndex, SummaryIndex
+from llama_index.llms import LlamaCPP
+from llama_index.embeddings import HuggingFaceEmbedding
+
+from app.utils.reader import PyMuPDFReader
+from app.database import CustomPGVectorStore, get_vector_store_singleton, check_database_connection
+from app.chat.router import chat_router
+from app.upload.router import upload_router
+from rag.systems.router_system import RouterSystem
+from rag.default import Default
+
+# TODO: restructure these
 from app.setup.service_context import initialize_llamaindex_service_context
-from app.setup.tracing import initialize_tracing_service
 
 load_dotenv()
 
@@ -38,16 +46,19 @@ async def lifespan(app: FastAPI):
     cred = credentials.Certificate(cwd / 'firebase_creds.json')
     initialize_app(cred)
 
-    # if environment == "dev":
-    #     # Initialize observability service.
-    #     initialize_tracing_service("wandb", "talking-resume")
-
     # Set global ServiceContext for LlamaIndex.
-    initialize_llamaindex_service_context(environment)
+    # initialize_llamaindex_service_context()
 
-    yield
+    rag_system = RouterSystem(
+        data_loader=PyMuPDFReader(),
+        llm=Default.llm(),
+        embed_model=Default.embedding_model(),
+    )
+
+    yield {"rag_system": rag_system}
 
     # This section is run on app shutdown.
+    del rag_system
     await vector_store.close()
 
 app = FastAPI(lifespan=lifespan)
@@ -67,7 +78,8 @@ if environment == "dev":
         allow_headers=["*"],
     )
 
-app.include_router(api_router, prefix="/api")
+app.include_router(chat_router, prefix="/api/chat")
+app.include_router(upload_router, prefix="/api/upload")
 
 
 if __name__ == "__main__":

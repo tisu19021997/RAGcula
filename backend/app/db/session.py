@@ -1,13 +1,10 @@
-import os
-from dotenv import find_dotenv, load_dotenv
+from app.config import POSTGRE_ASYNC_ENGINE, POSTGRE_ENGINE
 from sqlmodel import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-load_dotenv(find_dotenv())
-
 async_engine = create_async_engine(
-    os.environ["POSTGRE_ASYNC_ENGINE"],
+    POSTGRE_ASYNC_ENGINE,
     pool_pre_ping=True,
     pool_size=4,  # Number of connections to keep open in the pool
     max_overflow=4,  # Number of connections that can be opened beyond the pool_size
@@ -19,7 +16,7 @@ AsyncSessionLocal = async_sessionmaker(
     autocommit=False, autoflush=False, bind=async_engine)
 
 engine = create_engine(
-    os.environ["POSTGRE_ENGINE"],
+    POSTGRE_ENGINE,
     pool_pre_ping=True,
     pool_size=4,
     max_overflow=4,

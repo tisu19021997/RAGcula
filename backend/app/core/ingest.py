@@ -30,5 +30,9 @@ def ingest_user_documents(
         doc.metadata["is_active"] = True
         # Don't let the LLM see these metadata.
         doc.excluded_llm_metadata_keys = [
-            "user_id", "is_active", "doc_uuid", "description", "question"]
+            "user_id", "is_active", "doc_uuid", "description", "question"
+        ]
+        doc.excluded_embed_metadata_keys = [
+            "user_id", "is_active", "doc_uuid", "description", "question"
+        ]
     return documents

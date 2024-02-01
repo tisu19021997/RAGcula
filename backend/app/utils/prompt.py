@@ -54,12 +54,13 @@ def messages_to_prompt_alpaca(messages: Sequence[ChatMessage]) -> str:
     for message in messages:
         role = message.role
         content = message.content
-        string_message = f"### {role.value}:\n{content}"
+        string_message = f"### {role.value.capitalize()}:\n{content}\n"
 
         addtional_kwargs = message.additional_kwargs
         if addtional_kwargs:
             string_message += f"\n{addtional_kwargs}"
         string_messages.append(string_message)
 
-    string_messages.append(f"### {MessageRole.ASSISTANT.value}:\n")
+    string_messages.append(
+        f"### {MessageRole.ASSISTANT.value.capitalize()}:\n")
     return "\n".join(string_messages)

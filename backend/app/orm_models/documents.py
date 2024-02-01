@@ -4,7 +4,7 @@ from typing import Optional
 
 
 class Document(SQLModel, table=True):
-    __tablename__ = "documents"
+    __tablename__ = "document"
 
     id: Optional[uuid_pkg.UUID] = Field(
         default_factory=uuid_pkg.uuid4, primary_key=True)

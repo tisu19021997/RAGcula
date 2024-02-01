@@ -31,9 +31,3 @@ def decode_access_token(
         )
     res.headers['WWW-Authenticate'] = 'Bearer realm="auth_required"'
     return decoded_token
-
-
-async def get_current_user(
-    token
-):
-    return None
