@@ -1,5 +1,5 @@
-from llama_index.llms import LlamaCPP
-from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index.llms.llama_cpp import LlamaCPP
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 from .default import DEFAULT_LLM_MODEL, DEFAULT_EMB_MODEL
 from .prompt import messages_to_prompt_alpaca

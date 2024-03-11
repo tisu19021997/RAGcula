@@ -1,7 +1,7 @@
-from llama_index.llms import LlamaCPP
-from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index.llms.llama_cpp import LlamaCPP
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-from .prompt import messages_to_prompt_alpaca
+from .prompt import messages_to_prompt_alpaca, completion_to_prompt_alpaca
 
 DEFAULT_LLM_MODEL = "https://huggingface.co/TheBloke/SOLAR-10.7B-Instruct-v1.0-GGUF/resolve/main/solar-10.7b-instruct-v1.0.Q5_K_M.gguf"
 DEFAULT_EMB_MODEL = "BAAI/bge-large-en-v1.5"
@@ -24,5 +24,6 @@ class Default:
             model_kwargs={"n_gpu_layers": -1, "chat_format": "llama-2"},
             verbose=False,
             messages_to_prompt=messages_to_prompt_alpaca,
+            completion_to_prompt=completion_to_prompt_alpaca
         )
         return llm

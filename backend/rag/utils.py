@@ -2,9 +2,12 @@ import fsspec
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 from io import BytesIO
-
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document
+from datetime import timedelta
+from cachetools import cached, TTLCache
+from llama_index.core import StorageContext
+from llama_index.core.readers.base import BaseReader
+from llama_index.core import Document
+from llama_index.core.vector_stores.types import VectorStore
 
 
 class CustomPDFReader(BaseReader):
@@ -82,3 +85,15 @@ class CustomPDFReader(BaseReader):
                 )
                 for page in doc
             ]
+
+
+@cached(
+    TTLCache(maxsize=10, ttl=timedelta(minutes=5).total_seconds()),
+    key=lambda *args, **kwargs: "global_storage_context",
+)
+def get_storage_context(persist_dir: str, vector_store: VectorStore) -> StorageContext:
+    print("Creating new storage context.")
+    return StorageContext.from_defaults(
+        persist_dir=persist_dir,
+        vector_store=vector_store
+    )

@@ -14,6 +14,5 @@ class Document(SQLModel, table=True):
     is_active: bool
     description: str
     question: str
-    user_id: str
     llamaindex_ref_doc_ids: List[str] = Field(
         default=None, sa_column=Column(ARRAY(String())))

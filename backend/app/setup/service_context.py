@@ -1,5 +1,5 @@
-from llama_index import ServiceContext, set_global_service_context
-from llama_index.text_splitter import TokenTextSplitter
+from llama_index.core import ServiceContext, set_global_service_context
+from llama_index.core.node_parser import TokenTextSplitter
 
 from app.core.model import get_llm, get_embedding_model
 

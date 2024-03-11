@@ -3,8 +3,8 @@ import uuid as uuid_pkg
 
 from app.utils.fs import get_s3_fs
 from app.utils.reader import PDFReader, PyMuPDFReader
-from llama_index.node_parser import UnstructuredElementNodeParser
-from llama_index.schema import IndexNode
+from llama_index.core.node_parser import UnstructuredElementNodeParser
+from llama_index.core.schema import IndexNode
 
 logger = logging.getLogger("uvicorn")
 
@@ -17,7 +17,7 @@ def ingest_user_documents(
     question: str,
     user_id: str,
 ):
-    # PDFReader = download_loader("PDFReader")
+from llama_index.readers.file import PDFReader
     loader = PyMuPDFReader()
     documents = loader.load_data(user_document_path, fs=get_s3_fs())
 

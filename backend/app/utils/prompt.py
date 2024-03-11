@@ -1,9 +1,6 @@
-from llama_index.prompts import PromptTemplate
+from llama_index.core import PromptTemplate
 from typing import Sequence
-from llama_index.llms.types import (
-    ChatMessage,
-    MessageRole,
-)
+from llama_index.core.llms import ChatMessage, MessageRole
 
 QA_PROMPTS = {
     "neural-chat-7b": (

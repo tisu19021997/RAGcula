@@ -61,11 +61,10 @@ def create_documents(
     return documents
 
 
-def get_documents_by_user_id(
-    user_id: str
+def get_documents(
 ) -> List[Document] | None:
     with SessionLocal() as session:
-        stmt = select(Document).where(Document.user_id == user_id)
+        stmt = select(Document)
         documents = session.execute(stmt).scalars().all()
         return documents
 
@@ -81,15 +80,12 @@ def get_document_by_id(
 
 async def delete_document_by_id(
     document_id: uuid_pkg.UUID,
-    user_id: str,
 ) -> None:
     # vector_store = await get_vector_store_singleton()
 
     # Document objects.
     with SessionLocal() as session:
-        stmt = delete(Document).where(
-            (Document.user_id == user_id)
-            & (Document.id == document_id))
+        stmt = delete(Document).where(Document.id == document_id)
         session.execute(stmt)
         session.commit()
 

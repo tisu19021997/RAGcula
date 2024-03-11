@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ChakraProvider } from '@chakra-ui/react';
-import { AntdRegistry } from '@ant-design/nextjs-registry';
-import { AuthContextProvider } from "@/app/auth/provider";
+import { ChakraProvider } from "@chakra-ui/react";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { Props } from "@/app/interfaces/iprops.interface";
-import NavBar from "./components/ui/navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TalkingResume",
+  title: "RAGcula",
 };
 
 export default function RootLayout({ children }: Props) {
@@ -18,12 +16,7 @@ export default function RootLayout({ children }: Props) {
     <html lang="en">
       <body className={inter.className}>
         <AntdRegistry>
-          <ChakraProvider>
-            <AuthContextProvider>
-              {/* <NavBar /> */}
-              {children}
-            </AuthContextProvider>
-          </ChakraProvider>
+          <ChakraProvider>{children}</ChakraProvider>
         </AntdRegistry>
       </body>
     </html>

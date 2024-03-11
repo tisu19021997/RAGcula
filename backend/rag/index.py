@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from llama_index import StorageContext, load_index_from_storage, load_indices_from_storage
+from llama_index.core import StorageContext, load_index_from_storage, load_indices_from_storage
 
 from app.database import get_vector_store_singleton
 from .schemas import RagIndex

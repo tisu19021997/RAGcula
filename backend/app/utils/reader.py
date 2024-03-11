@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 from io import BytesIO
 
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document
+from llama_index.core.readers.base import BaseReader
+from llama_index.core import Document
 
 
 class PyMuPDFReader(BaseReader):

@@ -3,22 +3,21 @@ import llama_index
 from typing import Annotated
 from fastapi.responses import StreamingResponse
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from llama_index.indices.empty import EmptyIndex
-from llama_index.selectors.llm_selectors import LLMSingleSelector
-from llama_index.llms.types import MessageRole, ChatMessage
-from llama_index.retrievers import VectorIndexRetriever, SummaryIndexEmbeddingRetriever, RouterRetriever
-from llama_index.tools import RetrieverTool
-from llama_index.chat_engine import ContextChatEngine
-from llama_index.memory import ChatMemoryBuffer
-from llama_index.vector_stores import MetadataFilter, MetadataFilters, FilterOperator
-from llama_index.callbacks import CallbackManager, LlamaDebugHandler
+from llama_index.core.indices import EmptyIndex
+from llama_index.core.selectors import LLMSingleSelector
+from llama_index.core.llms import MessageRole, ChatMessage
+from llama_index.core.retrievers import VectorIndexRetriever, SummaryIndexEmbeddingRetriever, RouterRetriever
+from llama_index.core.tools import RetrieverTool
+from llama_index.core.chat_engine import ContextChatEngine
+from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.vector_stores import MetadataFilter, MetadataFilters, FilterOperator
+from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
 
 from app.utils.json_to import json_to_model
 from app.utils.index import get_index
 from app.pydantic_models.chat import ChatData
 from app.prompts.system import LLM_SYSTEM_MESSAGE
 from rag.schemas import RagIndex
-from app.auth import decode_access_token
 
 chat_router = r = APIRouter()
 
@@ -30,20 +29,7 @@ async def chat(
     # we need to use Depends(json_to_model(_ChatData)) here
     data: Annotated[ChatData, Depends(json_to_model(ChatData))],
     index: Annotated[RagIndex, Depends(get_index)],
-    token_payload: Annotated[dict, Depends(decode_access_token)]
 ):
-    # logger = logging.getLogger("uvicorn")
-    user_id = token_payload["user_id"]
-    # Only need to retrieve indices from the current user.
-    filters = MetadataFilters(
-        filters=[
-            MetadataFilter(
-                key="user_id",
-                operator=FilterOperator.EQ,
-                value=user_id),
-        ]
-    )
-
     # check preconditions and get last message
     if len(data.messages) == 0:
         raise HTTPException(
@@ -79,7 +65,6 @@ async def chat(
     vs_retriever = VectorIndexRetriever(
         index=index.vector,
         similarity_top_k=3,
-        filters=filters,
     )
     summary_retriever = SummaryIndexEmbeddingRetriever(
         index=index.summary,

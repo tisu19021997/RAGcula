@@ -4,13 +4,14 @@ import uuid
 from pathlib import Path
 from typing import Annotated, List
 from fastapi import APIRouter, File, Request, UploadFile, Form, Depends
-from llama_index import StorageContext, VectorStoreIndex, SummaryIndex
+from llama_index.core import StorageContext, VectorStoreIndex
+from llama_index.core.indices import SummaryIndex
 
 from rag.fs import get_s3_fs, get_s3_boto_client
 from rag.systems.router_system import RouterSystem
-from app.auth import decode_access_token
+from rag.utils import get_storage_context
 from app.database import get_vector_store_singleton
-from .crud import get_documents_by_user_id, create_documents, delete_document_by_id, get_document_by_id
+from .crud import get_documents, create_documents, delete_document_by_id, get_document_by_id
 from .models import Document
 
 
@@ -25,11 +26,9 @@ async def upload(
     description: Annotated[str, Form()],
     question: Annotated[str, Form()],
     file: Annotated[UploadFile, File()],
-    token_payload: Annotated[dict, Depends(decode_access_token)],
 ) -> Document:
     vector_store = await get_vector_store_singleton()
     rag_system: RouterSystem = request.state.rag_system
-    user_id = token_payload["user_id"]
 
     # TODO: build a Thread object.
     thread_uuid = "123"  # uuid4()
@@ -55,14 +54,13 @@ async def upload(
         is_active=True,
         description=description,
         question=question,
-        user_id=user_id,
         llamaindex_ref_doc_ids=doc_ids
     )
     # Insert to database.
     doc_in_db = create_documents([doc])[0]
 
     had_storage = (thread_dir / "docstore.json").exists()
-    storage_context = StorageContext.from_defaults(
+    storage_context = get_storage_context(
         vector_store=vector_store,
         persist_dir=thread_dir if had_storage else None,
     )
@@ -85,10 +83,8 @@ async def upload(
 
 
 @r.get("")
-def get_upload(
-    user_id: str,
-) -> List[Document]:
-    documents = get_documents_by_user_id(user_id)
+def get_upload() -> List[Document]:
+    documents = get_documents()
     return documents
 
 
@@ -96,7 +92,6 @@ def get_upload(
 async def delete_upload(
     request: Request,
     document_id: str,
-    user_id: str,
 ) -> None:
     # TODO: for each index, use delete_ref_doc to delete indices.
     thread_uuid = "123"  # uuid4()
@@ -111,7 +106,7 @@ async def delete_upload(
 
     # Load the document to get its ref_doc_ids for index/docstore deletion.
     document = get_document_by_id(document_id=document_id)
-    await delete_document_by_id(document_id, user_id)
+    await delete_document_by_id(document_id)
 
     # Delete the file in storage.
     fs = fsspec.filesystem("local")

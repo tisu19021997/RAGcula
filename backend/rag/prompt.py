@@ -1,8 +1,5 @@
 from typing import Sequence
-from llama_index.llms.types import (
-    ChatMessage,
-    MessageRole,
-)
+from llama_index.core.llms import ChatMessage, MessageRole
 
 # Default system message for LLM.
 LLM_SYSTEM_MESSAGE = (
@@ -61,3 +58,12 @@ def messages_to_prompt_alpaca(messages: Sequence[ChatMessage]) -> str:
     string_messages.append(
         f"### {MessageRole.ASSISTANT.value.capitalize()}:\n")
     return "\n".join(string_messages)
+
+
+def completion_to_prompt_alpaca(prompt: str) -> str:
+    prompt = (
+        "### User:\n"
+        f"{prompt}"
+        "### Assistant:\n"
+    )
+    return prompt

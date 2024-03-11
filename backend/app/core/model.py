@@ -1,5 +1,5 @@
-from llama_index.llms import LlamaCPP
-from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index.llms.llama_cpp import LlamaCPP
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from app.utils.prompt import messages_to_prompt_alpaca
 
 MODEL_URL = "https://huggingface.co/TheBloke/SOLAR-10.7B-Instruct-v1.0-GGUF/resolve/main/solar-10.7b-instruct-v1.0.Q5_K_M.gguf"

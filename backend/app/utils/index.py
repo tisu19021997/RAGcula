@@ -2,10 +2,7 @@ import logging
 from pathlib import Path
 from typing import Annotated
 from fastapi import Depends
-from llama_index import (
-    StorageContext,
-    load_index_from_storage,
-)
+from llama_index.core import StorageContext, load_index_from_storage
 
 from app.db.pg_vector import get_vector_store_singleton
 from app.utils.fs import get_s3_fs

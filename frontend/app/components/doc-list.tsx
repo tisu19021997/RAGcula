@@ -5,8 +5,6 @@ import { Typography, Flex, Space, Button, Popconfirm, theme } from 'antd';
 import { red } from "@ant-design/colors";
 
 import axInstance from '@/app/api/config';
-import { useAuth } from '@/app/auth/provider';
-import Link from 'next/link';
 
 const { Text } = Typography;
 
@@ -24,13 +22,11 @@ const DocList: React.FC<DocListProps> = (props) => {
     const { name, docId, docUrl, onDelete } = props;
     const [isHovered, setIsHovered] = useState<boolean>(false);
     const { token: { paddingMD } } = theme.useToken();
-    const { user } = useAuth();
     const deleteHandler = async (e?: React.MouseEvent<HTMLElement | MouseEvent>) => {
         const res = await axInstance.delete(
-            'chat/upload',
+            '/upload',
             {
                 params: {
-                    user_id: user.uid,
                     document_id: docId,
                 },
             },

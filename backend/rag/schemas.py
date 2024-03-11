@@ -1,10 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, ConfigDict
-from llama_index import (
-    DocumentSummaryIndex,
-    VectorStoreIndex,
-    SummaryIndex,
-)
+from llama_index.core import DocumentSummaryIndex, VectorStoreIndex
+from llama_index.core.indices import SummaryIndex
 
 
 class RagIndex(BaseModel):

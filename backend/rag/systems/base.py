@@ -3,17 +3,26 @@ from fsspec import AbstractFileSystem
 from pathlib import Path
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, ConfigDict
-from llama_index import StorageContext, ServiceContext, load_indices_from_storage
-from llama_index.readers.base import BaseReader
-from llama_index.llms.llm import LLM
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.response_synthesizers.base import BaseSynthesizer
-from llama_index.core import BaseRetriever, BaseQueryEngine
-from llama_index.schema import TransformComponent
-from llama_index.indices.base import BaseIndex
-from llama_index.data_structs.data_structs import IndexStruct
-from llama_index.chat_engine.types import BaseChatEngine
-from llama_index.schema import Document
+from llama_index.core import (
+    StorageContext,
+    ServiceContext,
+    Settings,
+    Document,
+    load_indices_from_storage,
+    set_global_service_context
+)
+from llama_index.core.readers.base import BaseReader
+from llama_index.core.llms import LLM
+from llama_index.core.embeddings import BaseEmbedding
+from llama_index.core.response_synthesizers import BaseSynthesizer
+from llama_index.core.retrievers import BaseRetriever
+from llama_index.core.query_engine import BaseQueryEngine
+from llama_index.core.schema import TransformComponent
+from llama_index.core.indices.base import BaseIndex
+from llama_index.core.data_structs.data_structs import IndexStruct
+from llama_index.core.chat_engine.types import BaseChatEngine
+
+from rag.default import Default
 
 
 class Indexer(BaseModel):
@@ -25,37 +34,32 @@ class Indexer(BaseModel):
 
 
 class BaseSystem(ABC):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     data_loader: BaseReader
     llm: LLM
     embed_model: BaseEmbedding
-    transformations: List[TransformComponent]
     indices: List[BaseIndex[IndexStruct]] = None
     storage: StorageContext
     response_composer: BaseSynthesizer
     context_retriever: BaseRetriever
-    service_context: ServiceContext = None
     engine: Union[BaseQueryEngine, BaseChatEngine] = None
     documents: List[Document] = None
 
     def __init__(
         self,
         data_loader: BaseReader,
-        llm: LLM,
-        embed_model: BaseEmbedding,
         transformations: List[TransformComponent],
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         response_composer: Optional[BaseSynthesizer] = None,
         # retriever: BaseRetriever
     ) -> "BaseSystem":
         self.data_loader = data_loader
-        self.llm = llm
-        self.embed_model = embed_model
-        self.transformations = transformations
         self.response_composer = response_composer
-        self.service_context = service_context
-
+        Settings.llm = llm or Default.llm()
+        Settings.embed_model = embed_model or Default.embedding_model()
+        Settings.chunk_size = Settings.embed_model.max_length
+        Settings.transformations = transformations
+        
         # self.retriever = retriever
 
     @abstractmethod
@@ -86,8 +90,10 @@ class BaseSystem(ABC):
         return self
 
     # TODO: implement method to print tree structure of the system.
+    # just like Haystack pipeline.draw().
     def __str__(self) -> str:
-        return f"LLM={self.llm.__module__}, Encoder={self.embed_model.model_name}"
+        # pygraphviz
+        return f"LLM={self.service_context.llm.__module__}, Encoder={self.service_context.embed_model.model_name}"
 
     def docs_to_index(self, documents: List[Document]) -> Self:
         for index in self.indices:

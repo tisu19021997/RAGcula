@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Annotated, List
 from fastapi import APIRouter, File, UploadFile, Form, Depends
-from llama_index import StorageContext, VectorStoreIndex, SummaryIndex
+from llama_index.core import StorageContext, VectorStoreIndex
+from llama_index.core.indices import SummaryIndex
 
 from app.utils.auth import decode_access_token
 from app.utils.fs import get_s3_fs, get_s3_boto_client
