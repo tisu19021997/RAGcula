@@ -24,7 +24,7 @@ const App = () => {
 
     const getUploadedFiles = async () => {
       const { data } = await axInstance.get("/upload", {
-        timeout: 20000,
+        timeout: 50000,
       });
 
       if (!ignore) {

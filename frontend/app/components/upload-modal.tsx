@@ -8,8 +8,6 @@ import axInstance from "@/app/api/config";
 
 interface FormInputs {
   file: [UploadFile];
-  description: string;
-  question: string;
 }
 
 interface UploadModelProps {
@@ -44,11 +42,11 @@ const UploadModal: React.FC<UploadModelProps> = ({ onUploadSucces }) => {
 
         // Create a FormData for multipart request.
         const formData: FormData = new FormData();
-        const { file, description, question } = values;
+        const { file } = values;
         if (file[0].originFileObj) {
           formData.append("file", file[0].originFileObj);
-          formData.append("description", description);
-          formData.append("question", question);
+          // formData.append("description", description);
+          // formData.append("question", question);
 
           const { data } = await axInstance.post("/upload/single", formData, {
             timeout: 50000,
@@ -132,7 +130,7 @@ const UploadModal: React.FC<UploadModelProps> = ({ onUploadSucces }) => {
               </Upload.Dragger>
             </Form.Item>
 
-            <Form.Item
+            {/* <Form.Item
               label="When to use this document"
               name="description"
               rules={[{ required: true, message: "This field is required." }]}
@@ -149,7 +147,7 @@ const UploadModal: React.FC<UploadModelProps> = ({ onUploadSucces }) => {
                 placeholder="E.g Which university did you attend to?"
                 rows={3}
               />
-            </Form.Item>
+            </Form.Item> */}
           </Form>
         </Flex>
         {/* </form> */}
