@@ -1,10 +1,11 @@
 import uuid as uuid_pkg
-from fastapi import Depends
 from typing import List, Optional
-from sqlalchemy import text
-from sqlmodel import select, delete
 
-from app.database import get_vector_store_singleton, SessionLocal
+from app.database import SessionLocal, get_vector_store_singleton
+from fastapi import Depends
+from sqlalchemy import text
+from sqlmodel import delete, select
+
 from .models import Document
 
 
@@ -61,8 +62,7 @@ def create_documents(
     return documents
 
 
-def get_documents(
-) -> List[Document] | None:
+def get_all_documents() -> List[Document] | None:
     with SessionLocal() as session:
         stmt = select(Document)
         documents = session.execute(stmt).scalars().all()
@@ -78,22 +78,11 @@ def get_document_by_id(
         return document
 
 
-async def delete_document_by_id(
+def delete_document_by_id(
     document_id: uuid_pkg.UUID,
 ) -> None:
-    # vector_store = await get_vector_store_singleton()
-
     # Document objects.
     with SessionLocal() as session:
         stmt = delete(Document).where(Document.id == document_id)
         session.execute(stmt)
         session.commit()
-
-    # Vectors in vector database.
-    # async with vector_store._async_session() as session, session.begin():
-    #     stmt = text(
-    #         f"DELETE FROM {vector_store.schema_name}.data_{vector_store.table_name} where "
-    #         f"(metadata_->>'doc_uuid')::text = '{document_id}'"
-    #     )
-    #     await session.execute(stmt)
-    #     await session.commit()

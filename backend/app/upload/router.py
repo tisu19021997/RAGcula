@@ -1,19 +1,21 @@
-import aiofiles
-import fsspec
-import uuid
+import uuid as uuid_pkg
 from pathlib import Path
 from typing import Annotated, List
-from fastapi import APIRouter, File, Request, UploadFile, Form, Depends
-from llama_index.core import StorageContext, VectorStoreIndex
-from llama_index.core.indices import SummaryIndex
 
-from rag.fs import get_s3_fs, get_s3_boto_client
-from rag.systems.router_system import RouterSystem
-from rag.utils import get_storage_context
-from app.database import get_vector_store_singleton
-from .crud import get_documents, create_documents, delete_document_by_id, get_document_by_id
+import aiofiles
+import fsspec
+from app.deps import get_rag_system_from_state
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from rag.systems.react_system import ReactSystem
+from rag.utils import summarize_documents
+
+from .crud import (
+    create_documents,
+    delete_document_by_id,
+    get_all_documents,
+    get_document_by_id,
+)
 from .models import Document
-
 
 upload_router = r = APIRouter()
 
@@ -22,20 +24,21 @@ DEFAULT_STORAGE_DIR = Path.cwd() / "storage"
 
 @r.post("/single")
 async def upload(
-    request: Request,
-    description: Annotated[str, Form()],
-    question: Annotated[str, Form()],
     file: Annotated[UploadFile, File()],
+    rag_system: Annotated[ReactSystem, Depends(get_rag_system_from_state)],
 ) -> Document:
-    vector_store = await get_vector_store_singleton()
-    rag_system: RouterSystem = request.state.rag_system
-
     # TODO: build a Thread object.
+    import time
+
+    start = time.time()
+
     thread_uuid = "123"  # uuid4()
     thread_dir = DEFAULT_STORAGE_DIR / thread_uuid
     thread_dir.mkdir(parents=True, exist_ok=True)
-    new_file_name = f"{str(uuid.uuid4())}.pdf"
-    file_path = str(thread_dir/new_file_name)
+    had_storage = (thread_dir / "docstore.json").exists()
+    new_file_name = f"{str(uuid_pkg.uuid4())}.pdf"
+    doc_id = uuid_pkg.uuid4()
+    file_path = str(thread_dir / new_file_name)
 
     # Write uploaded file content to disk.
     async with aiofiles.open(file_path, "wb") as f:
@@ -44,74 +47,68 @@ async def upload(
 
     # Load and preprocess data to documents.
     fs = fsspec.filesystem("local")
-    documents = rag_system.load_data(file_path, fs=fs)
+    documents = rag_system.load_data(file_path, str(doc_id))
+    # Build indices and also persist to disk.
+    rag_system.build_indices(documents, str(doc_id))
+    rag_system.save_upload_index(upload_id=str(doc_id), persist_dir=thread_dir)
 
-    # Save document ids for later delete/update.
-    doc_ids = [document.doc_id for document in documents]
+    # Insert upload document to relational database.
+    ref_doc_ids = [document.doc_id for document in documents]
     doc = Document(
+        id=doc_id,
         display_name=file.filename,
         path=file_path,
         is_active=True,
-        description=description,
-        question=question,
-        llamaindex_ref_doc_ids=doc_ids
+        summary=summarize_documents(
+            documents,
+            rag_system.storage_context,
+            index=rag_system.indices[str(doc_id)].summary,
+        ),
+        llama_index_metadata={
+            "ref_doc_ids": ref_doc_ids,
+            "index_ids": [
+                indice.summary._index_struct.index_id
+                for _, indice in rag_system.indices.items()
+            ],
+        },
     )
-    # Insert to database.
     doc_in_db = create_documents([doc])[0]
 
-    had_storage = (thread_dir / "docstore.json").exists()
-    storage_context = get_storage_context(
-        vector_store=vector_store,
-        persist_dir=thread_dir if had_storage else None,
-    )
-
-    # If storage has been created, just load persisted indices.
-    # Else, initialize new indices.
-    if had_storage:
-        rag_system.load_indices(storage_context).docs_to_index(documents)
-    else:
-        rag_system.add_indice(VectorStoreIndex(
-            [], storage_context=storage_context), namespace=thread_uuid)
-        rag_system.add_indice(SummaryIndex(
-            [], storage_context=storage_context), namespace=thread_uuid)
-        rag_system.docs_to_index(documents)
-
-    # Persist indices to storage.
-    rag_system.save_indices(save_dir=thread_dir, fs=fs)
-
+    # Build engine based on uploaded documents.
+    rag_system.build_engine(uploads=get_all_documents())
+    print(f"ETA: {(time.time() - start)%60}")
     return doc_in_db
 
 
 @r.get("")
-def get_upload() -> List[Document]:
-    documents = get_documents()
-    return documents
+def get_upload(
+    rag_system: Annotated[ReactSystem, Depends(get_rag_system_from_state)]
+) -> List[Document]:
+    uploads = get_all_documents()
+    return uploads
 
 
 @r.delete("")
 async def delete_upload(
-    request: Request,
     document_id: str,
+    rag_system: Annotated[ReactSystem, Depends(get_rag_system_from_state)],
 ) -> None:
-    # TODO: for each index, use delete_ref_doc to delete indices.
     thread_uuid = "123"  # uuid4()
     thread_dir = DEFAULT_STORAGE_DIR / thread_uuid
-    vector_store = await get_vector_store_singleton()
-
-    rag_system: RouterSystem = request.state.rag_system
-    storage_context = StorageContext.from_defaults(
-        vector_store=vector_store,
-        persist_dir=thread_dir,
-    )
 
     # Load the document to get its ref_doc_ids for index/docstore deletion.
-    document = get_document_by_id(document_id=document_id)
-    await delete_document_by_id(document_id)
-
-    # Delete the file in storage.
     fs = fsspec.filesystem("local")
+    document = get_document_by_id(document_id=document_id)
     fs.rm_file(document.path)
 
+    # Delete from database.
+    delete_document_by_id(document_id)
+
     # Delete the indices then persist again to reflect the changes.
-    rag_system.delete_indices(
-        storage_context, document.llamaindex_ref_doc_ids).save_indices(save_dir=thread_dir, fs=fs)
+    rag_system.delete_upload_index(
+        str(document.id), document.llama_index_metadata["ref_doc_ids"]
+    )
+
+    uploads = get_all_documents()
+    rag_system.save_indices(save_dir=thread_dir, fs=fs)
+    rag_system.build_engine(uploads=uploads)

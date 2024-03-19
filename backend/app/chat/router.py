@@ -1,14 +1,18 @@
 from pathlib import Path
 from typing import Annotated
-from fastapi.responses import StreamingResponse
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from llama_index.core.llms import MessageRole, ChatMessage
 
 from app.database import get_vector_store_singleton
-from rag.systems.router_system import RouterSystem
+from app.deps import get_rag_system_from_state
+from app.upload.crud import get_all_documents
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
+from llama_index.core.llms import ChatMessage, MessageRole
+from rag.systems.base import BaseSystem
+from rag.systems.react_system import ReactSystem
 from rag.utils import get_storage_context
-from .utils import json_to_model
+
 from .schemas import ChatData
+from .utils import json_to_model
 
 chat_router = r = APIRouter()
 
@@ -18,20 +22,9 @@ DEFAULT_STORAGE_DIR = Path.cwd() / "storage"
 @r.post("")
 async def chat(
     request: Request,
-    # Note: To support clients sending a JSON object using content-type "text/plain",
-    # we need to use Depends(json_to_model(_ChatData)) here
     data: Annotated[ChatData, Depends(json_to_model(ChatData))],
+    rag_system: Annotated[ReactSystem, Depends(get_rag_system_from_state)],
 ):
-    thread_uuid = "123"  # uuid4()
-    thread_dir = DEFAULT_STORAGE_DIR / thread_uuid
-    vector_store = await get_vector_store_singleton()
-
-    rag_system: RouterSystem = request.state.rag_system
-    storage_context = get_storage_context(
-        vector_store=vector_store,
-        persist_dir=thread_dir,
-    )
-
     # check preconditions and get last message
     if len(data.messages) == 0:
         raise HTTPException(
@@ -53,9 +46,13 @@ async def chat(
         for m in data.messages
     ]
 
-    rag_system.build_retrievers(storage_context=storage_context)
-
-    response = rag_system.engine.stream_chat(lastMessage.content, messages)
+    # uploads = get_all_documents()
+    # rag_system.build_engine(uploads=uploads)
+    rag_system.engine.reset()
+    response = rag_system.engine.stream_chat(
+        lastMessage.content,
+        # messages
+    )
 
     # stream response
     async def event_generator():
